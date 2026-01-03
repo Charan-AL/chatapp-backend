@@ -80,6 +80,7 @@ export const register = async (email, phone, password) => {
       success: true,
       message: 'Registration initiated. Please verify your email with the OTP sent.',
       email,
+      session_id: session.id,
       otp_expires_at: session.expiresAt,
       otp_expires_in_seconds: session.expiresInSeconds,
     };
@@ -213,6 +214,7 @@ export const login = async (email, password) => {
       success: true,
       message: 'OTP sent to your email. Please verify to login.',
       email,
+      session_id: session.id,
       user_id: user.id,
       otp_expires_at: session.expiresAt,
       otp_expires_in_seconds: session.expiresInSeconds,
@@ -331,6 +333,7 @@ export const resendOtp = async (email, purpose = 'login') => {
       success: true,
       message: 'New OTP sent to your email',
       email,
+      session_id: session.id,
       otp_expires_at: session.expiresAt,
       otp_expires_in_seconds: session.expiresInSeconds,
     };
