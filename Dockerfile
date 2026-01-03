@@ -19,5 +19,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "fetch('http://localhost:3000/health')" || exit 1
 
-# Run migrations and start server
-CMD npm run migrate && npm start
+# Start server (migrations run automatically on startup)
+CMD npm start

@@ -42,12 +42,3 @@ CREATE INDEX IF NOT EXISTS idx_pending_expires ON pending_registrations(expires_
 CREATE INDEX IF NOT EXISTS idx_otp_email_purpose ON otp_sessions(email, purpose);
 CREATE INDEX IF NOT EXISTS idx_otp_expires ON otp_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_otp_blocked ON otp_sessions(blocked_until);
-
--- Cleanup function for expired OTP sessions (optional, can be scheduled)
-CREATE OR REPLACE FUNCTION cleanup_expired_otp_sessions()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM otp_sessions WHERE expires_at < CURRENT_TIMESTAMP;
-  DELETE FROM pending_registrations WHERE expires_at < CURRENT_TIMESTAMP;
-END;
-$$ LANGUAGE plpgsql;
