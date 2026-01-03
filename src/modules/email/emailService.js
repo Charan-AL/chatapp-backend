@@ -22,6 +22,8 @@ const getTransporter = () => {
       user: appConfig.email.user,
       pass: appConfig.email.password,
     },
+    connectionTimeout: 10000, // 10 seconds
+    socketTimeout: 10000,     // 10 seconds
     connectionUrl: `smtp://${appConfig.email.user}:${appConfig.email.password}@${appConfig.email.host}:${appConfig.email.port}`,
   });
 

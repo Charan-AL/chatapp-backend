@@ -10,7 +10,9 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 15000, // Increased from 2s to 15s for Railway stability
+  statement_timeout: 30000, // Statement timeout: 30 seconds
+  application_name: 'chat-app-backend',
 });
 
 // Log connection events
