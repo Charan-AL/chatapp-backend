@@ -8,9 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login_at TIMESTAMP,
-  is_active BOOLEAN DEFAULT true,
-  INDEX idx_email (email),
-  INDEX idx_phone (phone)
+  is_active BOOLEAN DEFAULT true
 );
 
 -- Pending registrations table (users not yet verified)
@@ -20,9 +18,7 @@ CREATE TABLE IF NOT EXISTS pending_registrations (
   phone VARCHAR(20) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  expires_at TIMESTAMP NOT NULL,
-  INDEX idx_email (email),
-  INDEX idx_expires_at (expires_at)
+  expires_at TIMESTAMP NOT NULL
 );
 
 -- OTP sessions table
@@ -35,10 +31,7 @@ CREATE TABLE IF NOT EXISTS otp_sessions (
   expires_at TIMESTAMP NOT NULL,
   purpose VARCHAR(50) NOT NULL CHECK (purpose IN ('login', 'registration')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email_purpose (email, purpose),
-  INDEX idx_expires_at (expires_at),
-  INDEX idx_blocked_until (blocked_until)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for better query performance

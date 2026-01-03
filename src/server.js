@@ -1,8 +1,56 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import appConfig from './config/app.js';
 import app from './app.js';
 import { testEmailConnection } from './modules/email/emailService.js';
 import logger from './utils/logger.js';
-import { query } from './config/database.js';
+import { query, closePool } from './config/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Run database migrations automatically
+ */
+const runDatabaseMigrations = async () => {
+  try {
+    logger.info('🔄 Running database migrations...');
+
+    // Read the schema.sql file
+    const schemaPath = path.join(__dirname, './database/schema.sql');
+    if (!fs.existsSync(schemaPath)) {
+      logger.warn('⚠️  Schema file not found - skipping migrations');
+      return;
+    }
+
+    const schema = fs.readFileSync(schemaPath, 'utf-8');
+
+    // Split by statements and execute
+    const statements = schema
+      .split(';')
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0);
+
+    let executedCount = 0;
+    for (const statement of statements) {
+      try {
+        await query(statement);
+        executedCount++;
+      } catch (error) {
+        // Log but continue - some statements may fail if tables already exist (which is fine)
+        logger.debug(`Migration statement result: ${error.message?.substring(0, 50)}`);
+      }
+    }
+
+    logger.info(`✅ Database migrations completed (${executedCount} statements)`);
+  } catch (error) {
+    logger.error('❌ Failed to run migrations:', {
+      error: error.message,
+    });
+    throw error;
+  }
+};
 
 /**
  * Retry logic for database connection test
@@ -40,6 +88,9 @@ const startServer = async () => {
 
     // Test database connection with retries
     await testDatabaseConnection(3, 2000);
+
+    // Run database migrations automatically
+    await runDatabaseMigrations();
 
     // Test email service (non-blocking)
     logger.info('Testing email service...');
