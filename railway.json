@@ -6,14 +6,15 @@
   "deploy": {
     "startCommand": "npm start",
     "restartPolicyMaxRetries": 5,
-    "restartPolicyWindowSeconds": 60
+    "restartPolicyWindowSeconds": 60,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30
   },
   "plugins": [
     "postgresql"
   ],
   "variables": {
     "NODE_ENV": "production",
-    "PORT": "3000",
     "OTP_EXPIRY_MINUTES": "15",
     "OTP_RESEND_COOLDOWN_MINUTES": "5",
     "OTP_MAX_ATTEMPTS": "3"
