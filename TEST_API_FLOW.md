@@ -10,7 +10,7 @@ Test the entire authentication flow after deployment to Railway.
 
 ✅ Backend deployed to Railway  
 ✅ Database migrations completed  
-✅ Server running on `https://anon-chat-backend.up.railway.app`  
+✅ Server running on `https://chatapp-backend-production-bd9e.up.railway.app`  
 ✅ Brevo SMTP credentials configured (optional for testing without email)
 
 ---
@@ -20,7 +20,7 @@ Test the entire authentication flow after deployment to Railway.
 **Verify the server is running:**
 
 ```bash
-curl -X GET https://anon-chat-backend.up.railway.app/health
+curl -X GET https://chatapp-backend-production-bd9e.up.railway.app/health
 ```
 
 **Expected Response (200 OK):**
@@ -45,7 +45,7 @@ curl -X GET https://anon-chat-backend.up.railway.app/health
 **Register new user:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "testuser@gmail.com",
@@ -85,7 +85,7 @@ curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
 **Get the OTP from database or email, then verify:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register/verify-otp \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "email": "testuser@gmail.com",
@@ -118,7 +118,7 @@ curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register/verify-o
 **Request new OTP:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/resend-otp \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/resend-otp \
   -H "Content-Type: application/json" \
   -d '{
     "email": "testuser@gmail.com",
@@ -150,7 +150,7 @@ curl -X POST https://anon-chat-backend.up.railway.app/api/auth/resend-otp \
 **Login with registered email:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/login \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "testuser@gmail.com",
@@ -183,7 +183,7 @@ curl -X POST https://anon-chat-backend.up.railway.app/api/auth/login \
 **Verify OTP from email:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/login/verify-otp \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/login/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "email": "testuser@gmail.com",
@@ -211,7 +211,7 @@ curl -X POST https://anon-chat-backend.up.railway.app/api/auth/login/verify-otp 
 **Use JWT token to verify authentication:**
 
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/verify \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/verify \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{}'
@@ -305,7 +305,7 @@ curl -X GET "https://anon-chat-backend.up.railway.app/api/auth/otp-status?email=
 3. **Environment Variables:**
    ```json
    {
-     "base_url": "https://anon-chat-backend.up.railway.app",
+     "base_url": "https://chatapp-backend-production-bd9e.up.railway.app",
      "email": "testuser@gmail.com",
      "token": "eyJ..."
    }

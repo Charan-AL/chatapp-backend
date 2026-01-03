@@ -54,7 +54,7 @@ git push origin main
 
 **Test 1: Health Check**
 ```bash
-curl https://anon-chat-backend.up.railway.app/health
+curl https://chatapp-backend-production-bd9e.up.railway.app/health
 ```
 
 **Expected Response (200 OK):**
@@ -68,7 +68,7 @@ curl https://anon-chat-backend.up.railway.app/health
 
 **Test 2: Register Endpoint**
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@gmail.com",
@@ -174,7 +174,7 @@ Look for:
 
 **3. Test with verbose curl**
 ```bash
-curl -v https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -v https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@gmail.com","phone":"1234567890","password":"Test123!"}'
 ```
@@ -187,10 +187,10 @@ This will show:
 **4. Check network connectivity**
 ```bash
 # From your local machine
-ping anon-chat-backend.up.railway.app
+ping chatapp-backend-production-bd9e.up.railway.app
 
 # Or test with browser
-# Open: https://anon-chat-backend.up.railway.app/health
+# Open: https://chatapp-backend-production-bd9e.up.railway.app/health
 ```
 
 Should respond (even if with 404, that's a response).

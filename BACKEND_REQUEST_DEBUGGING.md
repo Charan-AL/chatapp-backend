@@ -34,7 +34,7 @@ const corsOrigins = process.env.ALLOWED_ORIGINS
   : [
       'http://localhost:3000',
       'http://localhost:8080',
-      'https://anon-chat-backend.up.railway.app',
+      'https://chatapp-backend-production-bd9e.up.railway.app',
       'https://*.railway.app',
     ];
 
@@ -75,7 +75,7 @@ Updated `railway.json` to include `ALLOWED_ORIGINS` variable:
 
 ```json
 "variables": {
-  "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:8080,https://anon-chat-backend.up.railway.app"
+  "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:8080,https://chatapp-backend-production-bd9e.up.railway.app"
 }
 ```
 
@@ -133,14 +133,14 @@ git push origin main
 
 ### Step 3: Test Health Endpoint
 ```bash
-curl https://anon-chat-backend.up.railway.app/health
+curl https://chatapp-backend-production-bd9e.up.railway.app/health
 ```
 
 **Expected: 200 OK** ✅
 
 ### Step 4: Test Registration Endpoint
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@gmail.com",
@@ -236,7 +236,7 @@ Look for:
 
 **Check 4: Test with curl first**
 ```bash
-curl -v https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -v https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@gmail.com","phone":"1234567890","password":"Test123!"}'
 ```
@@ -246,7 +246,7 @@ This eliminates Android app complexity and tests backend directly.
 **Check 5: Verify CORS headers**
 ```bash
 # Check CORS response headers
-curl -i https://anon-chat-backend.up.railway.app/api/auth/register
+curl -i https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register
 ```
 
 Should see:

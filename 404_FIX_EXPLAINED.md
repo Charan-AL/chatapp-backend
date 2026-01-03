@@ -4,7 +4,7 @@
 
 Your Android app was getting a **404 "Application not found"** error when calling:
 ```
-POST https://anon-chat-backend.up.railway.app/api/auth/register
+POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register
 ```
 
 Even though the backend logs showed:
@@ -131,7 +131,7 @@ git push origin main
 
 ### Step 3: Test Health Endpoint
 ```bash
-curl https://anon-chat-backend.up.railway.app/health
+curl https://chatapp-backend-production-bd9e.up.railway.app/health
 ```
 
 **Expected Response (200 OK):**
@@ -150,7 +150,7 @@ curl https://anon-chat-backend.up.railway.app/health
 
 ### Step 4: Test Registration Endpoint
 ```bash
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",

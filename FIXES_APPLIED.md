@@ -85,7 +85,7 @@ Email connection test failed {"error":"Connection timeout"}
 #### 404 "Application Not Found"
 Android app getting:
 ```
-<-- 404 https://anon-chat-backend.up.railway.app/api/auth/register
+<-- 404 https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register
 {"status":"error","code":404,"message":"Application not found"}
 ```
 
@@ -99,7 +99,7 @@ Android app getting:
 2. Railway auto-deploys
 3. Check Railway logs for errors
 4. Verify app is "Running" status (not "Crashed" or "Deploying")
-5. Test health endpoint: `https://anon-chat-backend.up.railway.app/health`
+5. Test health endpoint: `https://chatapp-backend-production-bd9e.up.railway.app/health`
 
 ---
 
@@ -134,10 +134,10 @@ Expected log sequence:
 ### Step 4: Test API
 ```bash
 # Test health endpoint
-curl https://anon-chat-backend.up.railway.app/health
+curl https://chatapp-backend-production-bd9e.up.railway.app/health
 
 # Test registration
-curl -X POST https://anon-chat-backend.up.railway.app/api/auth/register \
+curl -X POST https://chatapp-backend-production-bd9e.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","phone":"1234567890","password":"TestPass123!"}'
 ```

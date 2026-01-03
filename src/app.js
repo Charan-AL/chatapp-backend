@@ -22,7 +22,7 @@ const corsOrigins = process.env.ALLOWED_ORIGINS
   : [
       'http://localhost:3000',           // Local development
       'http://localhost:8080',           // Mobile development
-      'https://anon-chat-backend.up.railway.app', // Railway domain
+      'https://chatapp-backend-production-bd9e.up.railway.app', // Railway production domain
       'https://*.railway.app',           // All Railway subdomains
     ];
 
