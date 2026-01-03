@@ -6,7 +6,7 @@ import appConfig from '../../config/app.js';
 import logger from '../../utils/logger.js';
 import * as otpService from '../otp/otpService.js';
 import * as userService from '../users/userService.js';
-import * as emailService from '../email/emailService.js';
+import * as emailService from '../email/brevoApiService.js';
 
 /**
  * Register a new user (Step 1: Create pending registration and send OTP)

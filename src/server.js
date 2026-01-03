@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import appConfig from './config/app.js';
 import app from './app.js';
-import { testEmailConnection } from './modules/email/emailService.js';
+import { testEmailConnection } from './modules/email/brevoApiService.js';
 import logger from './utils/logger.js';
 import { query, closePool } from './config/database.js';
 
