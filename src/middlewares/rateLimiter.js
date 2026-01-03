@@ -25,6 +25,7 @@ export const authLimiter = rateLimit({
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  xForwardedForHeader: true, // Support Railway and other proxies
   keyGenerator: (req) => {
     // Rate limit by IP and email if provided
     return req.body?.email || req.ip;
@@ -41,6 +42,7 @@ export const otpLimiter = rateLimit({
   message: 'Too many OTP requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  xForwardedForHeader: true, // Support Railway and other proxies
   keyGenerator: (req) => {
     // Rate limit by IP and email if provided
     return req.body?.email || req.ip;

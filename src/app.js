@@ -10,6 +10,13 @@ import { apiLimiter, authLimiter, otpLimiter } from './middlewares/rateLimiter.j
 const app = express();
 
 /**
+ * Trust Proxy Configuration
+ * Required for Railway and other reverse proxy environments
+ * This allows Express to read X-Forwarded-For headers for proper IP detection
+ */
+app.set('trust proxy', 1);
+
+/**
  * Security Middleware
  */
 app.use(helmet());
