@@ -17,6 +17,7 @@
     "NODE_ENV": "production",
     "OTP_EXPIRY_MINUTES": "15",
     "OTP_RESEND_COOLDOWN_MINUTES": "5",
-    "OTP_MAX_ATTEMPTS": "3"
+    "OTP_MAX_ATTEMPTS": "3",
+    "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:8080,https://anon-chat-backend.up.railway.app"
   }
 }

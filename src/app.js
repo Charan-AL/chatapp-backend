@@ -17,9 +17,37 @@ app.use(helmet());
 /**
  * CORS Configuration
  */
+const corsOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [
+      'http://localhost:3000',           // Local development
+      'http://localhost:8080',           // Mobile development
+      'https://anon-chat-backend.up.railway.app', // Railway domain
+      'https://*.railway.app',           // All Railway subdomains
+    ];
+
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl requests)
+      if (!origin) return callback(null, true);
+
+      // Check if origin matches any allowed origin
+      const isAllowed = corsOrigins.some(allowed => {
+        if (allowed.includes('*')) {
+          // Handle wildcard domains
+          const pattern = allowed.replace('*.', '').replace(/\*/g, '.*');
+          return new RegExp(`^https?://(.*\\.)?${pattern}$`).test(origin);
+        }
+        return allowed === origin;
+      });
+
+      if (isAllowed || process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
@@ -34,11 +62,32 @@ app.use(express.urlencoded({ limit: '10kb', extended: true }));
  * Request Logging Middleware
  */
 app.use((req, res, next) => {
+  const startTime = Date.now();
+
+  // Log incoming request
   logger.info('Incoming request', {
     method: req.method,
     path: req.path,
     ip: req.ip,
+    headers: {
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      origin: req.headers['origin'] || 'none',
+    },
+    body: req.method !== 'GET' ? JSON.stringify(req.body).substring(0, 100) : 'N/A',
   });
+
+  // Log response when it's finished
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    logger.info('Request completed', {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+    });
+  });
+
   next();
 });
 
