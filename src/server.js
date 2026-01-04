@@ -1,4 +1,5 @@
 import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import appConfig from './config/app.js';
@@ -81,20 +82,11 @@ const testDatabaseConnection = async (maxRetries = 3, retryDelayMs = 2000) => {
  */
 const startServer = async () => {
   try {
-    // Validate environment variables
-    logger.info('Validating critical environment variables...');
-    try {
-      appConfig.validate();
-      logger.info('✅ Environment variables validated');
-    } catch (validationError) {
-      logger.error('❌ Environment validation failed', {
-        error: validationError.message,
-      });
-      process.exit(1);
-    }
-
-    // Start Express server FIRST (non-blocking) - this ensures /health endpoint is available
     const PORT = appConfig.port;
+
+    // Start Express server FIRST - critical for healthchecks
+    // The /health endpoint must be available immediately on startup
+    // Database and service initialization happen in the background
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
       logger.info(`📧 Environment: ${appConfig.env}`);
@@ -114,6 +106,23 @@ const startServer = async () => {
       }
       process.exit(1);
     });
+
+    // Validate environment variables in background (non-blocking)
+    // This doesn't prevent /health endpoint from working
+    (async () => {
+      try {
+        logger.info('Validating critical environment variables...');
+        appConfig.validate();
+        logger.info('✅ Environment variables validated');
+      } catch (validationError) {
+        logger.error('❌ Environment validation failed - API operations may fail', {
+          error: validationError.message,
+          hint: 'Check that DATABASE_URL and JWT_SECRET are set in environment variables',
+        });
+        // Don't exit - the /health endpoint can still work for monitoring
+        // API requests will fail with proper error messages
+      }
+    })();
 
     // Run database operations in the background (non-blocking)
     // This ensures the /health endpoint is available immediately
