@@ -4,22 +4,19 @@ dotenv.config();
 
 /**
  * Validate required environment variables
+ * Only validates critical variables needed to start the server
+ * Email credentials are validated when needed
  */
 const validateEnv = () => {
   const required = [
     'DATABASE_URL',
     'JWT_SECRET',
-    'SMTP_HOST',
-    'SMTP_PORT',
-    'SMTP_USER',
-    'SMTP_PASSWORD',
-    'SMTP_FROM_EMAIL',
   ];
 
   const missing = required.filter(key => !process.env[key]);
 
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing critical environment variables: ${missing.join(', ')}`);
   }
 };
 

@@ -82,9 +82,16 @@ const testDatabaseConnection = async (maxRetries = 3, retryDelayMs = 2000) => {
 const startServer = async () => {
   try {
     // Validate environment variables
-    logger.info('Validating environment variables...');
-    appConfig.validate();
-    logger.info('✅ Environment variables validated');
+    logger.info('Validating critical environment variables...');
+    try {
+      appConfig.validate();
+      logger.info('✅ Environment variables validated');
+    } catch (validationError) {
+      logger.error('❌ Environment validation failed', {
+        error: validationError.message,
+      });
+      process.exit(1);
+    }
 
     // Start Express server FIRST (non-blocking) - this ensures /health endpoint is available
     const PORT = appConfig.port;
