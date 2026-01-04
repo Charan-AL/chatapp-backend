@@ -1,4 +1,5 @@
 import * as authService from './authService.js';
+import * as authService from './authService.js';
 import * as otpService from '../otp/otpService.js';
 import logger from '../../utils/logger.js';
 

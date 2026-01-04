@@ -1,6 +1,6 @@
 import express from 'express';
 import * as chatController from '../modules/chat/chatController.js';
-import { authenticateToken } from '../middlewares/auth.js';
+import { verifyToken } from '../middlewares/auth.js';
 import { validateRequestBody } from '../middlewares/validation.js';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 /**
  * All chat routes require authentication
  */
-router.use(authenticateToken);
+router.use(verifyToken);
 
 /**
  * POST /api/chat/create
