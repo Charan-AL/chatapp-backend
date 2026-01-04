@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS identity_keys (
 );
 
 -- Chat sessions table (1-to-1 chat rooms)
+-- Using a normalized approach: always store user IDs in a consistent order
+-- This makes lookups easier without needing CASE expressions
 CREATE TABLE IF NOT EXISTS chat_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_a_id UUID NOT NULL,
@@ -54,11 +56,15 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT true,
   FOREIGN KEY (user_a_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_b_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT unique_chat_pair UNIQUE (
-    CASE WHEN user_a_id < user_b_id THEN user_a_id ELSE user_b_id END,
-    CASE WHEN user_a_id < user_b_id THEN user_b_id ELSE user_a_id END
-  )
+  FOREIGN KEY (user_b_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create unique constraint using application-enforced ordering
+-- The application ensures user_a_id < user_b_id when inserting/updating
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_chat_pair 
+ON chat_sessions (
+  LEAST(user_a_id, user_b_id),
+  GREATEST(user_a_id, user_b_id)
 );
 
 -- Messages table (encrypted messages)
