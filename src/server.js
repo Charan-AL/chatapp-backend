@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import appConfig from './config/app.js';
 import app from './app.js';
 import logger from './utils/logger.js';
-import { query, closePool } from './config/database.js';
+import { query, closePool, testConnection, getPoolStatus } from './config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,28 +54,57 @@ const runDatabaseMigrations = async () => {
 
 /**
  * Test database connection with exponential backoff retry
+ * Returns diagnostic info to help users identify issues
  */
-const testDatabaseConnection = async (maxRetries = 5, initialDelayMs = 1000) => {
+const testDatabaseConnection = async (maxRetries = 3, initialDelayMs = 2000) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       logger.info(`Testing database connection (attempt ${attempt}/${maxRetries})...`);
-      const result = await query('SELECT NOW()');
-      logger.info('✅ Database connected successfully');
-      return result;
-    } catch (error) {
+
+      // Use the enhanced testConnection function
+      const testResult = await testConnection();
+
+      if (testResult.connected) {
+        logger.info('✅ Database connected successfully', testResult.diagnostics);
+        return true;
+      }
+
+      // Connection test returned failure info
+      logger.warn(`Database connection test failed: ${testResult.message}`, {
+        diagnostics: testResult.diagnostics,
+      });
+
+      if (attempt === maxRetries) {
+        // On last attempt, log the diagnostic hint
+        logger.error('❌ Max database connection retries reached', {
+          message: testResult.message,
+          diagnostics: testResult.diagnostics,
+          hint: testResult.diagnostics.hint,
+        });
+        return false;
+      }
+
       const delayMs = initialDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
+      logger.info(`Retrying in ${delayMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    } catch (error) {
       logger.warn(`Database connection attempt ${attempt} failed: ${error.message}`);
 
       if (attempt === maxRetries) {
-        logger.error('❌ Max database connection retries reached');
-        return null; // Don't throw - continue without database
+        logger.error('❌ Max database connection retries reached', {
+          error: error.message,
+          hint: 'Verify DATABASE_URL environment variable is set correctly and PostgreSQL service is running',
+        });
+        return false;
       }
 
-      // Wait before retrying
+      const delayMs = initialDelayMs * Math.pow(2, attempt - 1);
       logger.info(`Retrying in ${delayMs}ms...`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
+
+  return false;
 };
 
 /**
@@ -93,7 +122,11 @@ const startServer = async () => {
       logger.info(`🔐 OTP Expiry: ${appConfig.otp.expiryMinutes} minutes`);
       logger.info(`⏱️  Resend Cooldown: ${appConfig.otp.resendCooldownMinutes} minutes`);
       logger.info(`🛡️  Max OTP Attempts: ${appConfig.otp.maxAttempts}`);
-      logger.info(`✅ Health endpoint available at /${appConfig.env === 'production' ? '' : ''}health`);
+      logger.info(`✅ Health endpoint available at /health`);
+
+      // Log to console as well for Railway dashboard
+      console.log(`\n✅ Server started successfully on port ${PORT}`);
+      console.log(`✅ Health endpoint: GET /health\n`);
     });
 
     // Handle server errors
@@ -122,6 +155,7 @@ const startServer = async () => {
           error: error.message,
           hint: 'Check DATABASE_URL and JWT_SECRET are set',
         });
+        // Still continue - some features will work without full config
       }
     })();
 
@@ -129,14 +163,34 @@ const startServer = async () => {
     (async () => {
       try {
         logger.info('Attempting database connection...');
-        const connected = await testDatabaseConnection(5, 1000);
+
+        // Test connection with diagnostics
+        const connected = await testDatabaseConnection(3, 2000);
 
         if (connected) {
-          logger.info('Running database migrations...');
+          logger.info('Database connection successful, running migrations...');
           await runDatabaseMigrations();
           logger.info('✅ Database initialization complete');
+
+          // Log pool status
+          const poolStatus = getPoolStatus();
+          logger.info('Database pool status:', poolStatus);
         } else {
-          logger.warn('⚠️  Database is not available - app will continue without it');
+          // Connection failed - provide clear guidance
+          logger.error('⚠️  Database connection failed', {
+            message: 'App will continue without database functionality',
+            action: 'Check the DATABASE_URL environment variable and ensure PostgreSQL is running and accessible',
+            troubleshooting: [
+              '1. Verify DATABASE_URL is set in Railway environment variables',
+              '2. Check PostgreSQL service is running and healthy in Railway dashboard',
+              '3. Verify the connection string format: postgresql://user:password@host:5432/dbname',
+              '4. Check Railway network connectivity between services',
+            ],
+          });
+
+          // Still log pool status for debugging
+          const poolStatus = getPoolStatus();
+          logger.debug('Database pool status:', poolStatus);
         }
       } catch (error) {
         logger.error('❌ Database initialization error', {
@@ -157,7 +211,8 @@ const startServer = async () => {
       } catch (error) {
         logger.warn('⚠️  Email service connection failed', {
           error: error.message,
-          hint: 'Check SMTP credentials in environment variables',
+          hint: 'Check SMTP_* environment variables (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)',
+          action: 'App will continue but OTP emails will not be sent',
         });
       }
     })();
@@ -169,6 +224,17 @@ const startServer = async () => {
     });
     process.exit(1);
   }
+};
+
+// Add a diagnostic endpoint for debugging (logs only, no actual endpoint)
+const logSystemInfo = () => {
+  logger.info('System Information:', {
+    nodeVersion: process.version,
+    platform: process.platform,
+    environment: process.env.NODE_ENV,
+    databaseUrlSet: !!process.env.DATABASE_URL,
+    jwtSecretSet: !!process.env.JWT_SECRET,
+  });
 };
 
 // Handle graceful shutdown
@@ -203,6 +269,9 @@ process.on('uncaughtException', (error) => {
   });
   process.exit(1);
 });
+
+// Log system info on startup
+logSystemInfo();
 
 // Start the server
 startServer();

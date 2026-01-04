@@ -111,6 +111,51 @@ app.get('/health', (req, res) => {
 });
 
 /**
+ * Diagnostic Endpoint (Development/Production monitoring)
+ * Shows configuration and connection status for debugging
+ */
+app.get('/diagnostics', async (req, res) => {
+  try {
+    // Import database functions
+    const { testConnection, getPoolStatus } = await import('./config/database.js');
+
+    // Test database connection
+    const dbTest = await testConnection();
+    const poolStatus = getPoolStatus();
+
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: appConfig.env,
+      services: {
+        database: {
+          connected: dbTest.connected,
+          message: dbTest.message,
+          diagnostics: dbTest.diagnostics,
+          poolStatus: poolStatus,
+        },
+        email: {
+          configured: !!appConfig.email.host,
+          host: appConfig.email.host || 'NOT SET',
+          user: appConfig.email.user ? '***' : 'NOT SET',
+        },
+      },
+      configuration: {
+        databaseUrlSet: !!process.env.DATABASE_URL,
+        jwtSecretSet: !!appConfig.jwt.secret,
+        smtpHostSet: !!appConfig.email.host,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+    });
+  }
+});
+
+/**
  * API Routes
  */
 
