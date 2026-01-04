@@ -232,3 +232,37 @@ export const deactivateUser = async (userId) => {
     throw error;
   }
 };
+
+/**
+ * Search for users by email
+ * @param {string} searchQuery - Search query (email prefix)
+ * @param {string} excludeUserId - Exclude current user from results
+ * @param {number} limit - Max results to return
+ * @returns {Promise<array>} Array of matching users
+ */
+export const searchUsersByEmail = async (searchQuery, excludeUserId, limit = 10) => {
+  if (!searchQuery || searchQuery.trim().length < 3) {
+    throw new Error('Search query must be at least 3 characters');
+  }
+
+  try {
+    const result = await query(
+      `SELECT id, email, is_email_verified, created_at
+       FROM users
+       WHERE email ILIKE $1
+       AND is_active = true
+       AND id != $2
+       ORDER BY email ASC
+       LIMIT $3`,
+      [`${searchQuery}%`, excludeUserId, limit]
+    );
+
+    return result.rows;
+  } catch (error) {
+    logger.error('Failed to search users', {
+      searchQuery,
+      error: error.message,
+    });
+    throw error;
+  }
+};

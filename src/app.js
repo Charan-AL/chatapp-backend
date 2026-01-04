@@ -4,6 +4,7 @@ import cors from 'cors';
 import appConfig from './config/app.js';
 import logger from './utils/logger.js';
 import authRoutes from './routes/authRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { apiLimiter, authLimiter, otpLimiter } from './middlewares/rateLimiter.js';
 
@@ -125,6 +126,9 @@ app.use('/api', apiLimiter);
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Chat routes
+app.use('/api/chat', chatRoutes);
 
 /**
  * Error Handling Middleware
