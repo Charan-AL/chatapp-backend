@@ -48,6 +48,9 @@ export const createChatController = async (req, res, next) => {
     const otherUser = await userService.getUserById(targetUserId);
     const otherUserEmailValue = otherUserEmail || (otherUser?.email || null);
 
+    // Get the other user's phone number
+    const otherUserPhone = otherUser?.phone || null;
+
     res.status(201).json({
       success: true,
       message: 'Chat session created',
@@ -55,6 +58,7 @@ export const createChatController = async (req, res, next) => {
         id: chatSession.id,
         otherUserId: targetUserId,
         otherUserEmail: otherUserEmailValue,
+        otherUserPhone: otherUserPhone,
         createdAt: chatSession.created_at,
         updatedAt: chatSession.updated_at,
       },
@@ -96,6 +100,7 @@ export const listChatsController = async (req, res, next) => {
         id: chat.id,
         otherUserId: chat.other_user_id,
         otherUserEmail: chat.other_user_email,
+        otherUserPhone: chat.other_user_phone,
         createdAt: chat.created_at,
         updatedAt: chat.updated_at,
       })),

@@ -99,14 +99,14 @@ export const getUserChatSessions = async (userId, activeOnly = true) => {
   }
 
   try {
-    let sql = `SELECT 
-      cs.id, 
-      cs.user_a_id, 
-      cs.user_b_id, 
-      cs.created_at, 
-      cs.updated_at, 
+    let sql = `SELECT
+      cs.id,
+      cs.user_a_id,
+      cs.user_b_id,
+      cs.created_at,
+      cs.updated_at,
       cs.is_active,
-      CASE 
+      CASE
         WHEN cs.user_a_id = $1 THEN cs.user_b_id
         ELSE cs.user_a_id
       END as other_user_id,
@@ -114,6 +114,10 @@ export const getUserChatSessions = async (userId, activeOnly = true) => {
         WHEN cs.user_a_id = $1 THEN u_b.email
         ELSE u_a.email
       END as other_user_email,
+      CASE
+        WHEN cs.user_a_id = $1 THEN u_b.phone
+        ELSE u_a.phone
+      END as other_user_phone,
       CASE
         WHEN cs.user_a_id = $1 THEN u_b.id
         ELSE u_a.id
