@@ -20,21 +20,29 @@ export const createOrGetChatSession = async (userAId, userBId) => {
     // Normalize user IDs so the pair is always sorted (for unique constraint)
     const [minId, maxId] = userAId < userBId ? [userAId, userBId] : [userBId, userAId];
 
+    // First try to get existing chat between these users
+    const existing = await query(
+      `SELECT id, user_a_id, user_b_id, created_at, updated_at, is_active
+       FROM chat_sessions
+       WHERE (user_a_id = $1 AND user_b_id = $2) OR (user_a_id = $2 AND user_b_id = $1)`,
+      [minId, maxId]
+    );
+
+    // If exists, return it; otherwise create new one
+    if (existing.rows.length > 0) {
+      return existing.rows[0];
+    }
+
     const result = await query(
       `INSERT INTO chat_sessions (user_a_id, user_b_id, created_at, updated_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       ON CONFLICT (
-         CASE WHEN user_a_id < user_b_id THEN user_a_id ELSE user_b_id END,
-         CASE WHEN user_a_id < user_b_id THEN user_b_id ELSE user_a_id END
-       )
-       DO UPDATE SET updated_at = CURRENT_TIMESTAMP
        RETURNING id, user_a_id, user_b_id, created_at, updated_at, is_active`,
       [minId, maxId]
     );
 
     const chatSession = result.rows[0];
 
-    logger.info('Chat session created/retrieved', {
+    logger.info('Chat session created', {
       chatSessionId: chatSession.id,
       userAId: minId,
       userBId: maxId,

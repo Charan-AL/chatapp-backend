@@ -43,12 +43,21 @@ export const createChatController = async (req, res, next) => {
     // Create or get chat session
     const chatSession = await chatSessionService.createOrGetChatSession(currentUserId, targetUserId);
 
-    // Get other user's identity key
+    // Get other user's identity key and email
     const otherUserIdentityKey = await identityKeyService.getIdentityKeyByUserId(targetUserId);
+    const otherUser = await userService.getUserById(targetUserId);
+    const otherUserEmailValue = otherUserEmail || (otherUser?.email || null);
 
     res.status(201).json({
       success: true,
       message: 'Chat session created',
+      chat: {
+        id: chatSession.id,
+        otherUserId: targetUserId,
+        otherUserEmail: otherUserEmailValue,
+        createdAt: chatSession.created_at,
+        updatedAt: chatSession.updated_at,
+      },
       chatSession: {
         id: chatSession.id,
         otherUserId: targetUserId,
