@@ -86,26 +86,7 @@ const startServer = async () => {
     appConfig.validate();
     logger.info('✅ Environment variables validated');
 
-    // Test database connection with retries
-    await testDatabaseConnection(3, 2000);
-
-    // Run database migrations automatically
-    await runDatabaseMigrations();
-
-    // Test email service (non-blocking)
-    logger.info('Testing email service...');
-    try {
-      await testEmailConnection();
-      logger.info('✅ Email service connected');
-    } catch (emailError) {
-      logger.warn('⚠️  Email service connection failed - server will continue but emails may not work', {
-        error: emailError.message,
-        hint: 'Check SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD environment variables',
-        recommendation: 'For Brevo: Use host=smtp-relay.brevo.com, port=587, user=your-brevo-email@example.com, pass=your-smtp-password',
-      });
-    }
-
-    // Start Express server
+    // Start Express server FIRST (non-blocking) - this ensures /health endpoint is available
     const PORT = appConfig.port;
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
@@ -126,6 +107,43 @@ const startServer = async () => {
       }
       process.exit(1);
     });
+
+    // Run database operations in the background (non-blocking)
+    // This ensures the /health endpoint is available immediately
+    (async () => {
+      try {
+        // Test database connection with retries
+        logger.info('Attempting database connection...');
+        await testDatabaseConnection(3, 2000);
+
+        // Run database migrations automatically
+        logger.info('Running database migrations...');
+        await runDatabaseMigrations();
+        logger.info('✅ Database initialization complete');
+      } catch (dbError) {
+        logger.error('Database initialization failed', {
+          error: dbError.message,
+          hint: 'Check DATABASE_URL environment variable and ensure PostgreSQL is accessible',
+        });
+        // Don't exit - server can run with database failures initially
+        // The /health endpoint will still work for Railway healthchecks
+      }
+    })();
+
+    // Test email service (non-blocking)
+    (async () => {
+      try {
+        logger.info('Testing email service...');
+        await testEmailConnection();
+        logger.info('✅ Email service connected');
+      } catch (emailError) {
+        logger.warn('⚠️  Email service connection failed - server will continue but emails may not work', {
+          error: emailError.message,
+          hint: 'Check SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD environment variables',
+          recommendation: 'For Brevo: Use host=smtp-relay.brevo.com, port=587, user=your-brevo-email@example.com, pass=your-smtp-password',
+        });
+      }
+    })();
   } catch (error) {
     logger.error('Failed to start server', {
       error: error.message,
