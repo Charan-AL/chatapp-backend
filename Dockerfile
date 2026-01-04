@@ -15,11 +15,10 @@ COPY . .
 # Expose port (Railway will assign the actual port via PORT env var)
 EXPOSE 8080
 
-# Health check - simply check if the app is listening
-# We use a simple node script to test the /health endpoint
-# Server starts immediately, so we only need 2s start-period
-HEALTHCHECK --interval=10s --timeout=3s --start-period=2s --retries=5 \
-  CMD node -e "fetch('http://localhost:' + (process.env.PORT || 3000) + '/health', { timeout: 2000 }).then(() => process.exit(0)).catch(() => process.exit(1))"
+# Health check - verify the app is listening on the /health endpoint
+# Uses a dedicated script with proper error handling
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
+  CMD node scripts/healthcheck.js
 
 # Start server (migrations run automatically on startup)
 CMD npm start
