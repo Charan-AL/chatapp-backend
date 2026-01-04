@@ -34,8 +34,8 @@ export const createOrGetChatSession = async (userAId, userBId) => {
     }
 
     const result = await query(
-      `INSERT INTO chat_sessions (user_a_id, user_b_id, created_at, updated_at)
-       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO chat_sessions (user_a_id, user_b_id, created_at, updated_at, is_active)
+       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
        RETURNING id, user_a_id, user_b_id, created_at, updated_at, is_active`,
       [minId, maxId]
     );
