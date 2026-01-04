@@ -17,7 +17,7 @@ router.use(verifyToken);
  */
 router.post(
   '/create',
-  validateRequestBody(['otherUserId', 'otherUserEmail'], 'any'),
+  validateRequestBody([], ['otherUserId', 'otherUserEmail']),
   chatController.createChatController
 );
 

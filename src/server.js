@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import appConfig from './config/app.js';
 import app from './app.js';
-import { testEmailConnection } from './modules/email/brevoApiService.js';
 import logger from './utils/logger.js';
 import { query, closePool } from './config/database.js';
 
@@ -12,6 +11,7 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Run database migrations automatically
+ * This is non-blocking and won't prevent the server from starting
  */
 const runDatabaseMigrations = async () => {
   try {
@@ -48,14 +48,14 @@ const runDatabaseMigrations = async () => {
     logger.error('❌ Failed to run migrations:', {
       error: error.message,
     });
-    throw error;
+    // Don't throw - migrations are non-blocking
   }
 };
 
 /**
- * Retry logic for database connection test
+ * Test database connection with exponential backoff retry
  */
-const testDatabaseConnection = async (maxRetries = 3, retryDelayMs = 2000) => {
+const testDatabaseConnection = async (maxRetries = 5, initialDelayMs = 1000) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       logger.info(`Testing database connection (attempt ${attempt}/${maxRetries})...`);
@@ -63,104 +63,107 @@ const testDatabaseConnection = async (maxRetries = 3, retryDelayMs = 2000) => {
       logger.info('✅ Database connected successfully');
       return result;
     } catch (error) {
+      const delayMs = initialDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
       logger.warn(`Database connection attempt ${attempt} failed: ${error.message}`);
 
       if (attempt === maxRetries) {
-        throw error; // Throw on last attempt
+        logger.error('❌ Max database connection retries reached');
+        return null; // Don't throw - continue without database
       }
 
       // Wait before retrying
-      logger.info(`Retrying in ${retryDelayMs}ms...`);
-      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      logger.info(`Retrying in ${delayMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
 };
 
 /**
- * Initialize database connection and start server
+ * Main server startup
  */
 const startServer = async () => {
   try {
     const PORT = appConfig.port;
 
-    // Start Express server FIRST - critical for healthchecks
-    // The /health endpoint must be available immediately on startup
-    // Database and service initialization happen in the background
+    // Start Express server IMMEDIATELY
+    // Critical: The /health endpoint must be available right away for Railway healthchecks
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
       logger.info(`📧 Environment: ${appConfig.env}`);
       logger.info(`🔐 OTP Expiry: ${appConfig.otp.expiryMinutes} minutes`);
       logger.info(`⏱️  Resend Cooldown: ${appConfig.otp.resendCooldownMinutes} minutes`);
       logger.info(`🛡️  Max OTP Attempts: ${appConfig.otp.maxAttempts}`);
+      logger.info(`✅ Health endpoint available at /${appConfig.env === 'production' ? '' : ''}health`);
     });
 
     // Handle server errors
     server.on('error', (error) => {
       if (error.code === 'EADDRINUSE') {
-        logger.error(`Port ${PORT} is already in use`);
+        logger.error(`❌ Port ${PORT} is already in use`);
+        process.exit(1);
       } else {
-        logger.error('Server error', {
-          error: error.message,
-        });
+        logger.error('❌ Server error', { error: error.message });
+        process.exit(1);
       }
-      process.exit(1);
     });
 
-    // Validate environment variables in background (non-blocking)
-    // This doesn't prevent /health endpoint from working
+    // ============================================
+    // Non-blocking initialization (happens in background)
+    // ============================================
+
+    // 1. Validate environment variables (non-blocking)
     (async () => {
       try {
-        logger.info('Validating critical environment variables...');
+        logger.info('Validating environment variables...');
         appConfig.validate();
         logger.info('✅ Environment variables validated');
-      } catch (validationError) {
-        logger.error('❌ Environment validation failed - API operations may fail', {
-          error: validationError.message,
-          hint: 'Check that DATABASE_URL and JWT_SECRET are set in environment variables',
+      } catch (error) {
+        logger.error('⚠️  Environment validation failed', {
+          error: error.message,
+          hint: 'Check DATABASE_URL and JWT_SECRET are set',
         });
-        // Don't exit - the /health endpoint can still work for monitoring
-        // API requests will fail with proper error messages
       }
     })();
 
-    // Run database operations in the background (non-blocking)
-    // This ensures the /health endpoint is available immediately
+    // 2. Test and initialize database (non-blocking)
     (async () => {
       try {
-        // Test database connection with retries
         logger.info('Attempting database connection...');
-        await testDatabaseConnection(3, 2000);
+        const connected = await testDatabaseConnection(5, 1000);
 
-        // Run database migrations automatically
-        logger.info('Running database migrations...');
-        await runDatabaseMigrations();
-        logger.info('✅ Database initialization complete');
-      } catch (dbError) {
-        logger.error('Database initialization failed', {
-          error: dbError.message,
-          hint: 'Check DATABASE_URL environment variable and ensure PostgreSQL is accessible',
+        if (connected) {
+          logger.info('Running database migrations...');
+          await runDatabaseMigrations();
+          logger.info('✅ Database initialization complete');
+        } else {
+          logger.warn('⚠️  Database is not available - app will continue without it');
+        }
+      } catch (error) {
+        logger.error('❌ Database initialization error', {
+          error: error.message,
+          hint: 'Check DATABASE_URL and ensure PostgreSQL is accessible',
         });
-        // Don't exit - server can run with database failures initially
-        // The /health endpoint will still work for Railway healthchecks
       }
     })();
 
-    // Test email service (non-blocking)
+    // 3. Test email service (non-blocking)
     (async () => {
       try {
+        // Import here to avoid circular dependencies
+        const emailService = await import('./modules/email/brevoApiService.js');
         logger.info('Testing email service...');
-        await testEmailConnection();
+        await emailService.testEmailConnection();
         logger.info('✅ Email service connected');
-      } catch (emailError) {
-        logger.warn('⚠️  Email service connection failed - server will continue but emails may not work', {
-          error: emailError.message,
-          hint: 'Check SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD environment variables',
-          recommendation: 'For Brevo: Use host=smtp-relay.brevo.com, port=587, user=your-brevo-email@example.com, pass=your-smtp-password',
+      } catch (error) {
+        logger.warn('⚠️  Email service connection failed', {
+          error: error.message,
+          hint: 'Check SMTP credentials in environment variables',
         });
       }
     })();
+
   } catch (error) {
-    logger.error('Failed to start server', {
+    logger.error('❌ Failed to start server', {
       error: error.message,
       stack: error.stack,
     });
@@ -168,5 +171,38 @@ const startServer = async () => {
   }
 };
 
-// Start server
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received - shutting down gracefully');
+  closePool().then(() => process.exit(0)).catch(err => {
+    logger.error('Error closing database pool', { error: err.message });
+    process.exit(1);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received - shutting down gracefully');
+  closePool().then(() => process.exit(0)).catch(err => {
+    logger.error('Error closing database pool', { error: err.message });
+    process.exit(1);
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+  logger.error('❌ Unhandled Rejection', {
+    reason: String(reason),
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('❌ Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
+});
+
+// Start the server
 startServer();

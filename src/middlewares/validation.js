@@ -3,8 +3,9 @@ import validator from 'validator';
 /**
  * Validate required fields in request body
  * @param {string[]} requiredFields - Array of required field names
+ * @param {string[]} optionalFields - Array of optional field names (at least one must be present if provided)
  */
-export const validateRequestBody = (requiredFields = []) => {
+export const validateRequestBody = (requiredFields = [], optionalFields = []) => {
   return (req, res, next) => {
     const errors = [];
 
@@ -22,6 +23,14 @@ export const validateRequestBody = (requiredFields = []) => {
         errors.push(`${field} is required`);
       }
     });
+
+    // Check if at least one optional field is present
+    if (optionalFields.length > 0) {
+      const hasAtLeastOne = optionalFields.some(field => req.body[field] && req.body[field] !== '');
+      if (!hasAtLeastOne) {
+        errors.push(`At least one of these fields is required: ${optionalFields.join(', ')}`);
+      }
+    }
 
     if (errors.length > 0) {
       return res.status(400).json({
