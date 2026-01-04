@@ -277,6 +277,7 @@ export const searchUsersController = async (req, res, next) => {
       users: users.map(user => ({
         id: user.id,
         email: user.email,
+        phone: user.phone,
         isEmailVerified: user.is_email_verified,
       })),
     });

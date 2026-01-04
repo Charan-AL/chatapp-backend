@@ -234,8 +234,8 @@ export const deactivateUser = async (userId) => {
 };
 
 /**
- * Search for users by email
- * @param {string} searchQuery - Search query (email prefix)
+ * Search for users by email or phone
+ * @param {string} searchQuery - Search query (email prefix or phone number)
  * @param {string} excludeUserId - Exclude current user from results
  * @param {number} limit - Max results to return
  * @returns {Promise<array>} Array of matching users
@@ -246,15 +246,16 @@ export const searchUsersByEmail = async (searchQuery, excludeUserId, limit = 10)
   }
 
   try {
+    // Search by email prefix OR exact phone match
     const result = await query(
-      `SELECT id, email, is_email_verified, created_at
+      `SELECT id, email, phone, is_email_verified, created_at
        FROM users
-       WHERE email ILIKE $1
+       WHERE (email ILIKE $1 OR phone = $2)
        AND is_active = true
-       AND id != $2
+       AND id != $3
        ORDER BY email ASC
-       LIMIT $3`,
-      [`${searchQuery}%`, excludeUserId, limit]
+       LIMIT $4`,
+      [`${searchQuery}%`, searchQuery, excludeUserId, limit]
     );
 
     return result.rows;
