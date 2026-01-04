@@ -56,7 +56,7 @@ const runDatabaseMigrations = async () => {
  * Test database connection with exponential backoff retry
  * Returns diagnostic info to help users identify issues
  */
-const testDatabaseConnection = async (maxRetries = 3, initialDelayMs = 2000) => {
+const testDatabaseConnection = async (maxRetries = 5, initialDelayMs = 3000) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       logger.info(`Testing database connection (attempt ${attempt}/${maxRetries})...`);
@@ -163,9 +163,10 @@ const startServer = async () => {
     (async () => {
       try {
         logger.info('Attempting database connection...');
+        logger.info('This may take up to 30 seconds on first startup or slow database...');
 
         // Test connection with diagnostics
-        const connected = await testDatabaseConnection(3, 2000);
+        const connected = await testDatabaseConnection(5, 3000);
 
         if (connected) {
           logger.info('Database connection successful, running migrations...');

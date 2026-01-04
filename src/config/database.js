@@ -55,10 +55,10 @@ if (!dbValidation.valid) {
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   // Connection pool settings optimized for Railway
-  max: 10, // Reduced from 20 to avoid connection limit issues
-  min: 2, // Maintain 2 idle connections
+  max: 5, // Reduced to avoid connection limit issues
+  min: 1, // Maintain 1 idle connection
   idleTimeoutMillis: 30000, // Close idle connections after 30s
-  connectionTimeoutMillis: 10000, // Reduced from 15s to 10s
+  connectionTimeoutMillis: 20000, // Increased from 10s to 20s for slow starts
   statement_timeout: 30000, // Statement timeout: 30 seconds
   application_name: 'chat-app-backend',
   // Connection string timeout (TCP timeout before connection attempt fails)
